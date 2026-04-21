@@ -655,13 +655,7 @@ function AdminDashboard() {
             <button onClick={() => navigate('/clients')}>+ New Client</button>
             <button
               onClick={() => {
-                const created = runCommissionCalculation()
-                window.alert(
-                  created > 0
-                    ? `Created ${created} commission ${created === 1 ? 'entry' : 'entries'}.`
-                    : 'No new commissions were created.',
-                )
-                navigate('/commissions')
+                navigate('/commissions?run=1')
               }}
             >
               Run Commissions
@@ -2386,6 +2380,8 @@ function NewReportPage() {
 
 function CommissionsPage() {
   const { t } = useTranslation()
+  const location = useLocation()
+  const navigate = useNavigate()
   const role = getCurrentRole()
   const canManage = role === 'admin'
   const [commissions, setCommissions] = useState(() => getCommissions())
@@ -2435,6 +2431,13 @@ function CommissionsPage() {
     )
     setTimeout(() => setCalcMessage(''), 4000)
   }
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('run') !== '1') return
+    handleRun()
+    navigate('/commissions', { replace: true })
+  }, [location.search])
 
   function handleSaveRules() {
     saveRules(rules)
@@ -2986,6 +2989,8 @@ function ProfilePage() {
 
 function SettingsPage() {
   const navigate = useNavigate()
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [resetDone, setResetDone] = useState(false)
 
   function handleReset() {
     resetDemoData()
@@ -2998,14 +3003,24 @@ function SettingsPage() {
     seedOrgData()
     seedFinance()
     seedPartnersIfMissing()
-    navigate('/login', { replace: true })
+    setConfirmOpen(false)
+    setResetDone(true)
+    setTimeout(() => navigate('/login', { replace: true }), 900)
   }
 
   return (
     <section>
       <h1>Settings</h1>
       <p>Use reset to restore default demo users and employee data.</p>
-      <button onClick={handleReset}>Reset Demo Data</button>
+      {resetDone ? <p className="calc-banner">Demo data reset complete. Redirecting to login...</p> : null}
+      <button onClick={() => setConfirmOpen(true)}>Reset Demo Data</button>
+      <ConfirmModal
+        open={confirmOpen}
+        title="Reset Demo Data"
+        message="This will wipe current demo changes and reseed all modules. Continue?"
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={handleReset}
+      />
     </section>
   )
 }
@@ -3348,6 +3363,7 @@ function HierarchyPage() {
 function InvoicesPage() {
   const { t } = useTranslation()
   const [rows, setRows] = useState(() => getInvoices())
+  const [notice, setNotice] = useState('')
   const [showCreate, setShowCreate] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [draft, setDraft] = useState({
@@ -3363,10 +3379,13 @@ function InvoicesPage() {
     if (!draft.agent) return
     const invoice = generateInvoiceForAgent(draft.agent, draft.period)
     if (!invoice) {
-      window.alert('No approvable commissions found for this agent.')
+      setNotice('No approvable commissions found for this agent.')
+      setTimeout(() => setNotice(''), 2800)
       return
     }
     setShowCreate(false)
+    setNotice(`Invoice ${invoice.id} generated for ${invoice.agent}.`)
+    setTimeout(() => setNotice(''), 2800)
     refresh()
   }
 
@@ -3395,6 +3414,7 @@ function InvoicesPage() {
     <section>
       <h1>{t('invoices')}</h1>
       <p>Proforma invoice invitations grouped by agent. {rows.length} invoices • €{totalAmount.toLocaleString()} total.</p>
+      {notice ? <p className="calc-banner">{notice}</p> : null}
       <div className="row-actions" style={{ marginTop: 12 }}>
         <button onClick={() => setShowCreate(true)}>＋ {t('generateInvoice')}</button>
         <button onClick={handleExportCsv}>⇣ {t('exportCsv')}</button>
