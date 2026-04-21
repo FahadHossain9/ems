@@ -5,7 +5,21 @@ import { useTranslation } from 'react-i18next'
 import { getSessionUser, loginByRole, logout, seedUsersIfMissing, updateSessionProfile } from './lib/demoAuth'
 import type { Role } from './lib/demoAuth'
 import { createEmployee, deleteEmployee, getEmployeeById, getScopedEmployees, resetDemoData, seedEmployeesIfMissing, updateEmployee } from './lib/demoData'
-import { createLead, deleteLead, getCommissions, getLeads, getNotifications, getReports, getActivity, seedAllRoleData, resetAllRoleData, updateLead } from './lib/seed'
+import {
+  createLead,
+  createReport,
+  deleteLead,
+  deleteReport,
+  getActivity,
+  getCommissions,
+  getLeads,
+  getNotifications,
+  getReports,
+  seedAllRoleData,
+  resetAllRoleData,
+  updateLead,
+  updateReport,
+} from './lib/seed'
 import type { DemoLead, LeadStage } from './lib/seed'
 import { getMenuForRole } from './lib/menus'
 import { createAgent, createBranch, deleteAgent, getBranches, getScopedAgents, seedOrgData } from './lib/orgData'
@@ -37,6 +51,7 @@ import {
 } from './lib/reporting'
 import type { ReportPresetId, SavedView } from './lib/reporting'
 import { exportCsv, exportJson } from './lib/exporters'
+import { createPartner, deletePartner, getPartners, seedPartnersIfMissing, updatePartner } from './lib/partnersData'
 
 function getCurrentRole(): Role | null {
   return getSessionUser()?.role ?? null
@@ -509,6 +524,7 @@ function LoginPage() {
     seedAllRoleData()
     seedOrgData()
     seedFinance()
+    seedPartnersIfMissing()
     if (getSessionUser()) {
       navigate('/dashboard', { replace: true })
     }
@@ -2192,17 +2208,16 @@ function ReportsPage() {
 
   function saveCreate() {
     if (!draft.client.trim()) return
-    const item = {
-      id: `RPT-${Math.floor(100 + Math.random() * 900)}`,
+    createReport({
       agent: draft.agent,
       client: draft.client.trim(),
       branch: role === 'manager' ? 'Branch Nord' : 'Branch Nord',
       serviceType: draft.serviceType,
-      submittedOn: '2025-04-21',
+      submittedOn: new Date().toISOString().slice(0, 10),
       status: draft.status as 'Draft' | 'Submitted' | 'Under Review' | 'Accepted' | 'Rejected',
       reviewedBy: draft.status === 'Accepted' ? 'Roberto Marino' : undefined,
-    }
-    setReports((prev) => [item, ...prev])
+    })
+    setReports(getReports())
     setShowCreateModal(false)
   }
 
@@ -2221,25 +2236,20 @@ function ReportsPage() {
 
   function saveEdit() {
     if (!editingReportId) return
-    setReports((prev) =>
-      prev.map((item) =>
-        item.id === editingReportId
-          ? {
-              ...item,
-              agent: draft.agent,
-              client: draft.client,
-              serviceType: draft.serviceType,
-              status: draft.status as 'Draft' | 'Submitted' | 'Under Review' | 'Accepted' | 'Rejected',
-            }
-          : item,
-      ),
-    )
+    updateReport(editingReportId, {
+      agent: draft.agent,
+      client: draft.client,
+      serviceType: draft.serviceType,
+      status: draft.status as 'Draft' | 'Submitted' | 'Under Review' | 'Accepted' | 'Rejected',
+    })
+    setReports(getReports())
     setEditingReportId(null)
   }
 
   function confirmDelete() {
     if (!deleteReportId) return
-    setReports((prev) => prev.filter((item) => item.id !== deleteReportId))
+    deleteReport(deleteReportId)
+    setReports(getReports())
     setDeleteReportId(null)
   }
 
@@ -2674,11 +2684,7 @@ function CommissionsPage() {
 function PartnersPage() {
   const role = getCurrentRole()
   const canManage = role === 'admin' || role === 'manager'
-  const [partners, setPartners] = useState([
-    { id: 'PRT-01', name: 'Agenzia Napoli Sud', city: 'Napoli', status: 'Active' },
-    { id: 'PRT-02', name: 'Studio Lazio Services', city: 'Roma', status: 'Active' },
-    { id: 'PRT-03', name: 'Milano Visa Point', city: 'Milano', status: 'Pending' },
-  ])
+  const [partners, setPartners] = useState(() => getPartners())
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -2693,7 +2699,8 @@ function PartnersPage() {
 
   function confirmDelete() {
     if (!deleteId) return
-    setPartners((prev) => prev.filter((item) => item.id !== deleteId))
+    deletePartner(deleteId)
+    setPartners(getPartners())
     setDeleteId(null)
   }
 
@@ -2714,19 +2721,11 @@ function PartnersPage() {
   function savePartner() {
     if (!draft.name.trim() || !draft.city.trim()) return
     if (editingId) {
-      setPartners((prev) =>
-        prev.map((item) =>
-          item.id === editingId
-            ? { ...item, name: draft.name.trim(), city: draft.city.trim(), status: draft.status }
-            : item,
-        ),
-      )
+      updatePartner(editingId, { name: draft.name.trim(), city: draft.city.trim(), status: draft.status })
     } else {
-      setPartners((prev) => [
-        { id: `PRT-${Date.now()}`, name: draft.name.trim(), city: draft.city.trim(), status: draft.status },
-        ...prev,
-      ])
+      createPartner({ name: draft.name.trim(), city: draft.city.trim(), status: draft.status })
     }
+    setPartners(getPartners())
     setShowModal(false)
     setEditingId(null)
   }
@@ -2998,6 +2997,7 @@ function SettingsPage() {
     seedAllRoleData()
     seedOrgData()
     seedFinance()
+    seedPartnersIfMissing()
     navigate('/login', { replace: true })
   }
 

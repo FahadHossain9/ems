@@ -241,6 +241,35 @@ export function getReports(): DemoReport[] {
   return scopeRecords(read<DemoReport>(REPORTS_KEY))
 }
 
+export function getAllReports(): DemoReport[] {
+  seedAllRoleData()
+  return read<DemoReport>(REPORTS_KEY)
+}
+
+export function saveReports(next: DemoReport[]) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(REPORTS_KEY, JSON.stringify(next))
+}
+
+export function createReport(input: Omit<DemoReport, 'id'>): DemoReport {
+  const row: DemoReport = {
+    ...input,
+    id: `RPT-${Date.now()}`,
+  }
+  saveReports([row, ...getAllReports()])
+  return row
+}
+
+export function updateReport(id: string, patch: Partial<Omit<DemoReport, 'id'>>) {
+  const next = getAllReports().map((item) => (item.id === id ? { ...item, ...patch } : item))
+  saveReports(next)
+}
+
+export function deleteReport(id: string) {
+  const next = getAllReports().filter((item) => item.id !== id)
+  saveReports(next)
+}
+
 export function getCommissions(): DemoCommission[] {
   seedAllRoleData()
   return scopeRecords(read<DemoCommission>(COMMISSIONS_KEY))

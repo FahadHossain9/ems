@@ -187,5 +187,6 @@ export function resetDemoData() {
   window.localStorage.removeItem('ems_users')
   window.localStorage.removeItem('ems_employees')
   window.localStorage.removeItem('ems_session')
+  window.localStorage.removeItem('ems_partners')
   seedEmployeesIfMissing()
 }
