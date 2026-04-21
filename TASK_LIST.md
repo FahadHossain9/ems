@@ -29,7 +29,7 @@
 - [ ] `/reports/new` - keep form-style create flow
 - [ ] `/commissions` - add/edit/delete controls + row action icons + delete confirm
 - [ ] `/partners` - add/edit/delete controls + row action icons + delete confirm
-- [ ] `/sos-sync` - read-only monitor (no destructive actions)
+- [ ] `/provider-sync` - read-only monitor fornitori (no destructive actions); `/sos-sync` redirects here
 - [ ] `/tasks` - read-only queue (status actions only)
 - [ ] `/profile` - edit-only page (already implemented)
 - [ ] `/settings` - reset confirmation (optional hardening)

@@ -12,7 +12,7 @@ void i18n.use(initReactI18next).init({
   resources: {
     en: {
       translation: {
-        loginTitle: 'EMS Demo Login',
+        loginTitle: 'SOS HQ Console — Demo Login',
         loginHint: 'One-click access for client walkthrough.',
         adminLogin: 'Login as Admin',
         managerLogin: 'Login as Manager',
@@ -39,7 +39,7 @@ void i18n.use(initReactI18next).init({
         agents: 'Agents',
         branches: 'Branches',
         partners: 'Partners',
-        sosSync: 'SOS Sync',
+        providerSync: 'Provider sync',
         team: 'Team',
         myClients: 'My Clients',
         myLeads: 'My Leads',
@@ -82,13 +82,13 @@ void i18n.use(initReactI18next).init({
         unifiedSession: 'Unified Session',
         searchPlaceholder: 'Search clients, leads, reports…',
         navLabelAdmin: 'Admin workspace',
-        navLabelManager: 'Branch Nord workspace',
+        navLabelManager: 'Nola HQ workspace',
         navLabelAgent: 'My workspace',
       },
     },
     it: {
       translation: {
-        loginTitle: 'Accesso Demo EMS',
+        loginTitle: 'SOS HQ Console — Accesso Demo',
         loginHint: 'Accesso rapido con un clic per la demo cliente.',
         adminLogin: 'Accedi come Admin',
         managerLogin: 'Accedi come Manager',
@@ -115,7 +115,7 @@ void i18n.use(initReactI18next).init({
         agents: 'Agenti',
         branches: 'Filiali',
         partners: 'Partner',
-        sosSync: 'Sincronizzazione SOS',
+        providerSync: 'Sincronizzazione fornitori',
         team: 'Team',
         myClients: 'I miei clienti',
         myLeads: 'I miei lead',
@@ -158,7 +158,7 @@ void i18n.use(initReactI18next).init({
         unifiedSession: 'Sessione Unificata',
         searchPlaceholder: 'Cerca clienti, lead, segnalazioni…',
         navLabelAdmin: 'Area Admin',
-        navLabelManager: 'Area Branch Nord',
+        navLabelManager: 'Area sede Nola',
         navLabelAgent: 'La mia area',
       },
     },

@@ -1,3 +1,5 @@
+import { MANAGER_SCOPE_BRANCH } from './sosDemo'
+
 export type Role = 'admin' | 'manager' | 'employee'
 
 export type DemoUser = {
@@ -15,27 +17,27 @@ const SESSION_KEY = 'ems_session'
 const defaultUsers: DemoUser[] = [
   {
     id: 'u-admin',
-    name: 'Giulia Ferretti',
-    email: 'admin@trelunetech.it',
+    name: 'Santo Vanzanella',
+    email: 'presidente@sosutenzeservizi.it',
     role: 'admin',
     branch: 'All',
-    initials: 'GF',
+    initials: 'SV',
   },
   {
     id: 'u-manager',
-    name: 'Roberto Marino',
-    email: 'manager@trelunetech.it',
+    name: 'Elena Esposito',
+    email: 'operations.nola@sosutenzeservizi.it',
     role: 'manager',
-    branch: 'Branch Nord',
-    initials: 'RM',
+    branch: MANAGER_SCOPE_BRANCH,
+    initials: 'EE',
   },
   {
     id: 'u-employee',
-    name: 'Marco Rossi',
-    email: 'agent@trelunetech.it',
+    name: 'Teresa Chiarello',
+    email: 'teresa.chiarello@sosutenzeservizi.it',
     role: 'employee',
-    branch: 'Branch Nord',
-    initials: 'MR',
+    branch: MANAGER_SCOPE_BRANCH,
+    initials: 'TC',
   },
 ]
 

@@ -1,4 +1,5 @@
 import { getSessionUser } from './demoAuth'
+import { AGENTS_SEED, BRANCHES_SEED, MANAGER_SCOPE_BRANCH } from './sosDemo'
 
 export type BranchRecord = {
   id: string
@@ -19,18 +20,9 @@ export type AgentRecord = {
 const BRANCHES_KEY = 'ems_branches'
 const AGENTS_KEY = 'ems_agents'
 
-const defaultBranches: BranchRecord[] = [
-  { id: 'br-01', name: 'Branch Nord', city: 'Milano', manager: 'Roberto Marino', status: 'Active' },
-  { id: 'br-02', name: 'Branch Sud', city: 'Napoli', manager: 'Paolo Conti', status: 'Active' },
-  { id: 'br-03', name: 'Branch Centro', city: 'Roma', manager: 'Giulia Ferretti', status: 'Planned' },
-]
+const defaultBranches: BranchRecord[] = BRANCHES_SEED.map((b) => ({ ...b }))
 
-const defaultAgents: AgentRecord[] = [
-  { id: 'ag-01', name: 'Marco Rossi', email: 'marco.rossi@trelune.it', branch: 'Branch Nord', status: 'Active' },
-  { id: 'ag-02', name: 'Lucia Mancini', email: 'lucia.mancini@trelune.it', branch: 'Branch Nord', status: 'Active' },
-  { id: 'ag-03', name: 'Paolo Conti', email: 'paolo.conti@trelune.it', branch: 'Branch Sud', status: 'Active' },
-  { id: 'ag-04', name: 'Anna Bellini', email: 'anna.bellini@trelune.it', branch: 'Branch Sud', status: 'On Leave' },
-]
+const defaultAgents: AgentRecord[] = AGENTS_SEED.map((a) => ({ ...a }))
 
 function seed<T>(key: string, defaults: T) {
   if (typeof window === 'undefined') return
@@ -71,7 +63,7 @@ export function getScopedAgents(): AgentRecord[] {
   const rows = read<AgentRecord>(AGENTS_KEY)
   if (!user) return []
   if (user.role === 'admin') return rows
-  if (user.role === 'manager') return rows.filter((r) => r.branch === user.branch)
+  if (user.role === 'manager') return rows.filter((r) => r.branch === MANAGER_SCOPE_BRANCH)
   return rows.filter((r) => r.name === user.name)
 }
 

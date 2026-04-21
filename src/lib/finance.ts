@@ -41,20 +41,26 @@ const INVOICES_KEY = 'ems_invoices'
 const LEDGER_KEY = 'ems_ledger'
 const COMMISSIONS_KEY = 'ems_commissions'
 
+/** Demo % rates on gross deal value; Mutui uses 0.25 = 0.25% on notional (intermediation). */
 const defaultRules: CommissionRule[] = [
-  { id: 'rule-imm', service: 'Immigration', rate: 10 },
-  { id: 'rule-tax', service: 'Tax', rate: 8 },
-  { id: 'rule-legal', service: 'Legal', rate: 12 },
+  { id: 'rule-luce', service: 'Luce', rate: 5 },
+  { id: 'rule-gas', service: 'Gas', rate: 5 },
+  { id: 'rule-fibra', service: 'Fibra', rate: 6 },
+  { id: 'rule-mobile', service: 'Mobile', rate: 5 },
+  { id: 'rule-ass', service: 'Assicurazioni', rate: 15 },
+  { id: 'rule-mutui', service: 'Mutui', rate: 0.25 },
+  { id: 'rule-nlt', service: 'NLT', rate: 8 },
+  { id: 'rule-malas', service: 'Malasanità', rate: 12 },
 ]
 
 const defaultInvoices: Invoice[] = [
   {
     id: 'INV-001',
-    agent: 'Marco Rossi',
-    branch: 'Branch Nord',
+    agent: 'Teresa Chiarello',
+    branch: 'Nola',
     period: '2025-03',
     items: ['COMM-001', 'COMM-013'],
-    amount: 61,
+    amount: 35,
     status: 'Paid',
     createdAt: '2025-04-01',
     paidAt: '2025-04-05',
@@ -62,34 +68,34 @@ const defaultInvoices: Invoice[] = [
   {
     id: 'INV-002',
     agent: 'Lucia Mancini',
-    branch: 'Branch Nord',
+    branch: 'Nola',
     period: '2025-03',
-    items: ['COMM-002', 'COMM-009'],
-    amount: 178,
+    items: ['COMM-002', 'COMM-012'],
+    amount: 241,
     status: 'Acknowledged',
     createdAt: '2025-04-01',
   },
   {
     id: 'INV-003',
-    agent: 'Paolo Conti',
-    branch: 'Branch Sud',
+    agent: 'Tiziana De Pasquale',
+    branch: 'Catania',
     period: '2025-03',
-    items: ['COMM-003', 'COMM-011'],
-    amount: 375,
+    items: ['COMM-003', 'COMM-011', 'COMM-014', 'COMM-009'],
+    amount: 832,
     status: 'Invited',
     createdAt: '2025-04-02',
   },
 ]
 
 const defaultLedger: LedgerEntry[] = [
-  { id: 'lg-001', date: '2025-01-15', type: 'income', category: 'Service Fee', amount: 12000, description: 'Immigration onboarding batch', source: 'manual' },
-  { id: 'lg-002', date: '2025-01-28', type: 'expense', category: 'Office', amount: 2400, description: 'Rent Branch Nord', source: 'manual' },
-  { id: 'lg-003', date: '2025-02-12', type: 'income', category: 'Service Fee', amount: 15800, description: 'Tax season fees', source: 'manual' },
+  { id: 'lg-001', date: '2025-01-15', type: 'income', category: 'Service Fee', amount: 12000, description: 'Attivazioni luce/gas Q1', source: 'manual' },
+  { id: 'lg-002', date: '2025-01-28', type: 'expense', category: 'Office', amount: 2400, description: 'Affitto sede Nola', source: 'manual' },
+  { id: 'lg-003', date: '2025-02-12', type: 'income', category: 'Service Fee', amount: 15800, description: 'Provvigioni fibra e mobile', source: 'manual' },
   { id: 'lg-004', date: '2025-02-24', type: 'expense', category: 'Salaries', amount: 8200, description: 'Payroll Feb', source: 'manual' },
-  { id: 'lg-005', date: '2025-03-10', type: 'income', category: 'Service Fee', amount: 19400, description: 'Legal deals', source: 'manual' },
-  { id: 'lg-006', date: '2025-03-22', type: 'expense', category: 'Commission', amount: 61, description: 'INV-001 paid', source: 'invoice', sourceId: 'INV-001' },
-  { id: 'lg-007', date: '2025-04-02', type: 'income', category: 'Service Fee', amount: 22100, description: 'Early April inflows', source: 'manual' },
-  { id: 'lg-008', date: '2025-04-10', type: 'expense', category: 'Office', amount: 2400, description: 'Rent Branch Nord', source: 'manual' },
+  { id: 'lg-005', date: '2025-03-10', type: 'income', category: 'Service Fee', amount: 19400, description: 'Intermediazione assicurativa', source: 'manual' },
+  { id: 'lg-006', date: '2025-03-22', type: 'expense', category: 'Commission', amount: 35, description: 'INV-001 paid', source: 'invoice', sourceId: 'INV-001' },
+  { id: 'lg-007', date: '2025-04-02', type: 'income', category: 'Service Fee', amount: 22100, description: 'Ricavi multiservizio aprile', source: 'manual' },
+  { id: 'lg-008', date: '2025-04-10', type: 'expense', category: 'Office', amount: 2400, description: 'Affitto hub Catania', source: 'manual' },
 ]
 
 export function seedFinance() {

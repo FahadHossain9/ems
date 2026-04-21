@@ -52,7 +52,7 @@ export const menusByRole: Record<Role, MenuGroup[]> = {
     {
       titleKey: 'system',
       items: [
-        { to: '/sos-sync', labelKey: 'sosSync', icon: '↻' },
+        { to: '/provider-sync', labelKey: 'providerSync', icon: '↻' },
         { to: '/tasks', labelKey: 'tasks', icon: '✓' },
         { to: '/settings', labelKey: 'settings', icon: '⚙' },
       ],

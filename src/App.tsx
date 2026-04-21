@@ -52,6 +52,14 @@ import {
 import type { ReportPresetId, SavedView } from './lib/reporting'
 import { exportCsv, exportJson } from './lib/exporters'
 import { createPartner, deletePartner, getPartners, seedPartnersIfMissing, updatePartner } from './lib/partnersData'
+import {
+  AGENTS_BY_BRANCH,
+  ALL_CONSULENTI,
+  BRANCH_OPTIONS,
+  MANAGER_SCOPE_BRANCH,
+  PRACTICE_TYPE_OPTIONS,
+  SERVICE_TYPE_OPTIONS,
+} from './lib/sosDemo'
 
 function getCurrentRole(): Role | null {
   return getSessionUser()?.role ?? null
@@ -59,11 +67,6 @@ function getCurrentRole(): Role | null {
 
 const PAGE_SIZE = 6
 const STATUS_REMARKS_KEY = 'ems_status_remarks'
-const BRANCH_OPTIONS = ['Branch Nord', 'Branch Sud']
-const AGENTS_BY_BRANCH: Record<string, string[]> = {
-  'Branch Nord': ['Marco Rossi', 'Lucia Mancini'],
-  'Branch Sud': ['Paolo Conti'],
-}
 
 function paginate<T>(items: T[], page: number, size = PAGE_SIZE) {
   const totalPages = Math.max(1, Math.ceil(items.length / size))
@@ -284,7 +287,7 @@ function AppLayout() {
     '/pipeline': t('pipeline'),
     '/commissions': t('commissions'),
     '/partners': t('partners'),
-    '/sos-sync': t('sosSync'),
+    '/provider-sync': t('providerSync'),
     '/unified-db': t('unifiedDb'),
     '/hierarchy': t('hierarchy'),
     '/invoices': t('invoices'),
@@ -371,9 +374,9 @@ function AppLayout() {
             {sidebarCollapsed ? '⟩' : '⟨'}
           </button>
           <div className="brand">
-            <span className="brand-mark">TL</span>
+            <span className="brand-mark">SOS</span>
             <div>
-              <h2>Tre Lune EMS</h2>
+              <h2>SOS HQ Console</h2>
               <p className="side-subtitle">
                 {role === 'admin'
                   ? t('navLabelAdmin')
@@ -417,7 +420,7 @@ function AppLayout() {
           <header className="topbar glass">
             <div className="topbar-left">
               <p className="crumb">
-                Tre Lune EMS / {currentTitle}
+                SOS Utenze — Operations / {currentTitle}
                 <span className="unified-badge" title="One session · all pillars">● {t('unifiedSession')}</span>
               </p>
               <h2 className="topbar-title">{currentTitle}</h2>
@@ -634,22 +637,19 @@ function AdminDashboard() {
     { month: 'Mar', value: 51000 }, { month: 'Apr', value: 56000 },
     { month: 'May', value: 49000 }, { month: 'Jun', value: 61000 },
   ]
-  const pipelineValue = leads
-    .filter((lead) => lead.stage === 'Won')
-    .reduce((sum, lead) => sum + (lead.contractValue ?? 0), 0)
 
   const cards = [
-    { label: 'Total Clients', value: '47', trend: '+12% vs last month' },
-    { label: 'Pipeline Value', value: `€${pipelineValue.toLocaleString()}`, trend: '+8%' },
-    { label: 'Open Leads', value: String(leads.filter((l) => l.stage !== 'Won' && l.stage !== 'Lost').length) },
-    { label: 'Commissions Pending', value: String(commissions.filter((c) => c.status === 'Pending').length) },
+    { label: 'Attivazioni mese (demo)', value: '142', trend: 'POD/PDR + fibra' },
+    { label: 'Risparmio stimato clienti', value: '€186k', trend: '+20.6% vs 1Q 2025' },
+    { label: 'Nuovi SOS Point (Academy)', value: '18', trend: 'Rete partner' },
+    { label: 'Provvigioni Pending', value: String(commissions.filter((c) => c.status === 'Pending').length) },
   ]
 
   return (
     <section className="dashboard">
       <DashboardHeader
-        title="Company Overview"
-        subtitle="Admin view — all branches, all agents"
+        title="SOS Utenze — Panoramica"
+        subtitle="Admin — tutte le filiali e consulenti"
         actions={
           <>
             <button onClick={() => navigate('/clients')}>+ New Client</button>
@@ -761,10 +761,10 @@ function AdminDashboard() {
           </ul>
         </article>
         <article className="chart-card glass">
-          <h3>SOS Sync Health</h3>
-          <p className="sync-ok">SOS Sync Active — last run 14 Apr 2025 10:00</p>
-          <p>12 imported, 3 pushed</p>
-          <button onClick={() => navigate('/sos-sync')}>Sync Now</button>
+          <h3>Stato sync fornitori</h3>
+          <p className="sync-ok">Connettori attivi — ultimo run 14 Apr 2026 10:00</p>
+          <p>12 contratti importati, 3 invii verso gestori</p>
+          <button onClick={() => navigate('/provider-sync')}>Apri monitor</button>
         </article>
       </section>
     </section>
@@ -786,17 +786,17 @@ function ManagerDashboard() {
   ).map(([name, tasks]) => ({ name, tasks }))
 
   const cards = [
-    { label: 'Branch Clients', value: '18', trend: 'Branch Nord' },
-    { label: 'Branch Pipeline', value: `€${wonValue.toLocaleString()}` },
-    { label: 'Open Leads', value: String(leads.filter((l) => l.stage !== 'Won' && l.stage !== 'Lost').length) },
-    { label: 'Review Queue', value: String(reviewQueue.length) },
+    { label: 'Clienti filiale', value: '18', trend: MANAGER_SCOPE_BRANCH },
+    { label: 'Pipeline filiale', value: `€${wonValue.toLocaleString()}` },
+    { label: 'Lead aperti', value: String(leads.filter((l) => l.stage !== 'Won' && l.stage !== 'Lost').length) },
+    { label: 'Coda revisione', value: String(reviewQueue.length) },
   ]
 
   return (
     <section className="dashboard">
       <DashboardHeader
-        title="Branch Nord Overview"
-        subtitle="Manager view — review queue and team performance"
+        title={`Sede ${MANAGER_SCOPE_BRANCH} — Overview`}
+        subtitle="Manager — coda pratiche e team"
         actions={<><Link to="/reports" className="link-btn">Open Review Queue</Link></>}
       />
       <KpiRow cards={cards} />
@@ -957,8 +957,8 @@ function EmployeesPage() {
   const [draft, setDraft] = useState({
     name: '',
     email: '',
-    branch: role === 'manager' ? 'Branch Nord' : 'Branch Nord',
-    assignedAgent: 'Marco Rossi',
+    branch: role === 'manager' ? MANAGER_SCOPE_BRANCH : MANAGER_SCOPE_BRANCH,
+    assignedAgent: 'Teresa Chiarello',
     status: 'Pending' as 'Active' | 'Pending' | 'Inactive',
   })
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -998,10 +998,15 @@ function EmployeesPage() {
     createEmployee({
       name: draft.name.trim(),
       email: draft.email.trim(),
-      branch: role === 'manager' ? 'Branch Nord' : draft.branch,
+      branch: role === 'manager' ? MANAGER_SCOPE_BRANCH : draft.branch,
       assignedAgent: draft.assignedAgent,
       status: draft.status,
       role: 'Employee',
+      segment: 'Famiglia',
+      currentProvider: '',
+      podPdr: '',
+      consumptionNote: '',
+      hasArrears: false,
     })
     setDraft((prev) => ({ ...prev, name: '', email: '' }))
     setShowCreateModal(false)
@@ -1026,7 +1031,7 @@ function EmployeesPage() {
     updateEmployee(editingEmployee.id, {
       name: editingEmployee.name,
       email: editingEmployee.email,
-      branch: role === 'manager' ? 'Branch Nord' : editingEmployee.branch,
+      branch: role === 'manager' ? MANAGER_SCOPE_BRANCH : editingEmployee.branch,
       assignedAgent: editingEmployee.assignedAgent,
       status: editingEmployee.status,
     })
@@ -1226,7 +1231,7 @@ function EmployeesPage() {
             value={draft.assignedAgent}
             onChange={(e) => setDraft((prev) => ({ ...prev, assignedAgent: e.target.value }))}
           >
-            {(AGENTS_BY_BRANCH[role === 'manager' ? 'Branch Nord' : draft.branch] ?? []).map((agent) => (
+            {(AGENTS_BY_BRANCH[role === 'manager' ? MANAGER_SCOPE_BRANCH : draft.branch] ?? []).map((agent) => (
               <option key={agent} value={agent}>
                 {agent}
               </option>
@@ -1277,7 +1282,7 @@ function EmployeesPage() {
                 setEditingEmployee((prev) => (prev ? { ...prev, assignedAgent: e.target.value } : prev))
               }
             >
-              {(AGENTS_BY_BRANCH[role === 'manager' ? 'Branch Nord' : editingEmployee.branch] ?? []).map((agent) => (
+              {(AGENTS_BY_BRANCH[role === 'manager' ? MANAGER_SCOPE_BRANCH : editingEmployee.branch] ?? []).map((agent) => (
                 <option key={agent} value={agent}>
                   {agent}
                 </option>
@@ -1377,6 +1382,11 @@ function EmployeeDetailPage() {
       <p>Assigned Agent: {employee.assignedAgent}</p>
       <p>Status: {employee.status}</p>
       <p>Email: {employee.email}</p>
+      {employee.segment ? <p>Segment: {employee.segment}</p> : null}
+      {employee.currentProvider ? <p>Fornitore attuale: {employee.currentProvider}</p> : null}
+      {employee.podPdr ? <p>POD/PDR: {employee.podPdr}</p> : null}
+      {employee.consumptionNote ? <p>Consumi / note: {employee.consumptionNote}</p> : null}
+      {employee.hasArrears !== undefined ? <p>Morosità segnalata: {employee.hasArrears ? 'Sì' : 'No'}</p> : null}
       <p>
         <Link to="/employees">Back to employees</Link>
       </p>
@@ -1395,8 +1405,8 @@ function ClientsPage() {
   const [draft, setDraft] = useState({
     name: '',
     email: '',
-    branch: role === 'manager' ? 'Branch Nord' : 'Branch Nord',
-    assignedAgent: 'Marco Rossi',
+    branch: role === 'manager' ? MANAGER_SCOPE_BRANCH : MANAGER_SCOPE_BRANCH,
+    assignedAgent: 'Teresa Chiarello',
     status: 'Active' as 'Active' | 'Pending' | 'Inactive',
   })
   const { rows, totalPages, safePage } = paginate(clients, page)
@@ -1418,16 +1428,21 @@ function ClientsPage() {
       name: draft.name.trim(),
       email: draft.email.trim(),
       role: 'Employee',
-      branch: role === 'manager' ? 'Branch Nord' : draft.branch,
+      branch: role === 'manager' ? MANAGER_SCOPE_BRANCH : draft.branch,
       assignedAgent: draft.assignedAgent,
       status: draft.status,
+      segment: 'Famiglia',
+      currentProvider: '',
+      podPdr: '',
+      consumptionNote: '',
+      hasArrears: false,
     })
     setShowCreateModal(false)
     setDraft({
       name: '',
       email: '',
-      branch: role === 'manager' ? 'Branch Nord' : 'Branch Nord',
-      assignedAgent: 'Marco Rossi',
+      branch: role === 'manager' ? MANAGER_SCOPE_BRANCH : MANAGER_SCOPE_BRANCH,
+      assignedAgent: 'Teresa Chiarello',
       status: 'Active',
     })
     setClients(getScopedEmployees())
@@ -1451,7 +1466,7 @@ function ClientsPage() {
     updateEmployee(editingClient.id, {
       name: draft.name.trim(),
       email: draft.email.trim(),
-      branch: role === 'manager' ? 'Branch Nord' : draft.branch,
+      branch: role === 'manager' ? MANAGER_SCOPE_BRANCH : draft.branch,
       assignedAgent: draft.assignedAgent,
       status: draft.status,
     })
@@ -1461,7 +1476,7 @@ function ClientsPage() {
   return (
     <section>
       <h1>Clients</h1>
-      <p>{clients.length} client records in your {role} scope.</p>
+      <p>{clients.length} clienti finali nel tuo scope ({role}).</p>
       {canManage ? (
         <div className="row-actions" style={{ marginTop: 12 }}>
           <button onClick={() => setShowCreateModal(true)}>➕ Add Client</button>
@@ -1489,6 +1504,8 @@ function ClientsPage() {
               <th>SL</th>
               <th>Client</th>
               <th>Email</th>
+              <th>Segment</th>
+              <th>Fornitore</th>
               <th>Branch</th>
               <th>Assigned Agent</th>
               <th>Status</th>
@@ -1508,6 +1525,8 @@ function ClientsPage() {
                 <td>{(safePage - 1) * PAGE_SIZE + idx + 1}</td>
                 <td>{client.name}</td>
                 <td>{client.email}</td>
+                <td>{client.segment ?? '—'}</td>
+                <td>{client.currentProvider ?? '—'}</td>
                 <td>{client.branch}</td>
                 <td>{client.assignedAgent}</td>
                 <td>{client.status}</td>
@@ -1602,9 +1621,9 @@ function LeadsPage() {
   const [page, setPage] = useState(1)
   const [draft, setDraft] = useState({
     company: '',
-    branch: role === 'manager' ? 'Branch Nord' : 'Branch Nord',
-    assignedAgent: 'Marco Rossi',
-    serviceType: 'immigration',
+    branch: role === 'manager' ? MANAGER_SCOPE_BRANCH : MANAGER_SCOPE_BRANCH,
+    assignedAgent: 'Teresa Chiarello',
+    serviceType: 'luce',
     contractValue: '',
     stage: 'New' as LeadStage,
   })
@@ -1643,7 +1662,7 @@ function LeadsPage() {
 
   function handleCreateLead() {
     if (!canManage || !draft.company.trim()) return
-    const branch = role === 'manager' ? 'Branch Nord' : draft.branch
+    const branch = role === 'manager' ? MANAGER_SCOPE_BRANCH : draft.branch
     createLead({
       company: draft.company.trim(),
       branch,
@@ -1687,7 +1706,7 @@ function LeadsPage() {
     if (!canManage || !editingLead) return
     updateLead(editingLead.id, {
       company: editingLead.company,
-      branch: role === 'manager' ? 'Branch Nord' : editingLead.branch,
+      branch: role === 'manager' ? MANAGER_SCOPE_BRANCH : editingLead.branch,
       assignedAgent: editingLead.assignedAgent,
       stage: editingLead.stage,
       serviceType: editingLead.serviceType,
@@ -1889,17 +1908,22 @@ function LeadsPage() {
             value={draft.assignedAgent}
             onChange={(e) => setDraft((prev) => ({ ...prev, assignedAgent: e.target.value }))}
           >
-            {(AGENTS_BY_BRANCH[role === 'manager' ? 'Branch Nord' : draft.branch] ?? []).map((agent) => (
+            {(AGENTS_BY_BRANCH[role === 'manager' ? MANAGER_SCOPE_BRANCH : draft.branch] ?? []).map((agent) => (
               <option key={agent} value={agent}>
                 {agent}
               </option>
             ))}
           </select>
-          <input
-            placeholder="Service Type"
+          <select
             value={draft.serviceType}
             onChange={(e) => setDraft((prev) => ({ ...prev, serviceType: e.target.value }))}
-          />
+          >
+            {SERVICE_TYPE_OPTIONS.map((svc) => (
+              <option key={svc} value={svc}>
+                {svc}
+              </option>
+            ))}
+          </select>
           <select
             value={draft.stage}
             onChange={(e) => setDraft((prev) => ({ ...prev, stage: e.target.value as LeadStage }))}
@@ -1956,19 +1980,24 @@ function LeadsPage() {
                 setEditingLead((prev) => (prev ? { ...prev, assignedAgent: e.target.value } : prev))
               }
             >
-              {(AGENTS_BY_BRANCH[role === 'manager' ? 'Branch Nord' : editingLead.branch] ?? []).map((agent) => (
+              {(AGENTS_BY_BRANCH[role === 'manager' ? MANAGER_SCOPE_BRANCH : editingLead.branch] ?? []).map((agent) => (
                 <option key={agent} value={agent}>
                   {agent}
                 </option>
               ))}
             </select>
-            <input
-              placeholder="Service Type"
+            <select
               value={editingLead.serviceType}
               onChange={(e) =>
                 setEditingLead((prev) => (prev ? { ...prev, serviceType: e.target.value } : prev))
               }
-            />
+            >
+              {SERVICE_TYPE_OPTIONS.map((svc) => (
+                <option key={svc} value={svc}>
+                  {svc}
+                </option>
+              ))}
+            </select>
             <select
               value={editingLead.stage}
               onChange={(e) => setEditingLead((prev) => (prev ? { ...prev, stage: e.target.value as LeadStage } : prev))}
@@ -2187,16 +2216,28 @@ function ReportsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [deleteReportId, setDeleteReportId] = useState<string | null>(null)
   const [editingReportId, setEditingReportId] = useState<string | null>(null)
-  const [draft, setDraft] = useState({
+  const [draft, setDraft] = useState<{
+    id: string
+    agent: string
+    client: string
+    serviceType: string
+    status: string
+  }>({
     id: '',
-    agent: 'Marco Rossi',
+    agent: 'Teresa Chiarello',
     client: '',
-    serviceType: 'Immigration Renewal',
+    serviceType: String(PRACTICE_TYPE_OPTIONS[0]),
     status: 'Submitted',
   })
 
   function openCreate() {
-    setDraft({ id: '', agent: 'Marco Rossi', client: '', serviceType: 'Immigration Renewal', status: 'Submitted' })
+    setDraft({
+      id: '',
+      agent: 'Teresa Chiarello',
+      client: '',
+      serviceType: String(PRACTICE_TYPE_OPTIONS[0]),
+      status: 'Submitted',
+    })
     setShowCreateModal(true)
   }
 
@@ -2205,11 +2246,11 @@ function ReportsPage() {
     createReport({
       agent: draft.agent,
       client: draft.client.trim(),
-      branch: role === 'manager' ? 'Branch Nord' : 'Branch Nord',
+      branch: role === 'manager' ? MANAGER_SCOPE_BRANCH : MANAGER_SCOPE_BRANCH,
       serviceType: draft.serviceType,
       submittedOn: new Date().toISOString().slice(0, 10),
       status: draft.status as 'Draft' | 'Submitted' | 'Under Review' | 'Accepted' | 'Rejected',
-      reviewedBy: draft.status === 'Accepted' ? 'Roberto Marino' : undefined,
+      reviewedBy: draft.status === 'Accepted' ? 'Elena Esposito' : undefined,
     })
     setReports(getReports())
     setShowCreateModal(false)
@@ -2249,8 +2290,8 @@ function ReportsPage() {
 
   return (
     <section>
-      <h1>Reports</h1>
-      <p>{reports.length} reports in your scope.</p>
+      <h1>Pratiche</h1>
+      <p>{reports.length} pratiche nel tuo scope.</p>
       {canManage ? (
         <div className="row-actions" style={{ marginTop: 12 }}>
           <button onClick={openCreate}>➕ Add Report</button>
@@ -2321,8 +2362,20 @@ function ReportsPage() {
       <FormModal open={showCreateModal || Boolean(editingReportId)} title={editingReportId ? 'Edit Report' : 'Add Report'} onClose={() => { setShowCreateModal(false); setEditingReportId(null) }}>
         <div className="modal-form">
           <input value={draft.client} placeholder="Client" onChange={(e) => setDraft((p) => ({ ...p, client: e.target.value }))} />
-          <input value={draft.agent} placeholder="Agent" onChange={(e) => setDraft((p) => ({ ...p, agent: e.target.value }))} />
-          <input value={draft.serviceType} placeholder="Service" onChange={(e) => setDraft((p) => ({ ...p, serviceType: e.target.value }))} />
+          <select value={draft.agent} onChange={(e) => setDraft((p) => ({ ...p, agent: e.target.value }))}>
+            {ALL_CONSULENTI.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+          <select value={draft.serviceType} onChange={(e) => setDraft((p) => ({ ...p, serviceType: e.target.value }))}>
+            {PRACTICE_TYPE_OPTIONS.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
           <select value={draft.status} onChange={(e) => setDraft((p) => ({ ...p, status: e.target.value }))}>
             <option value="Draft">Draft</option>
             <option value="Submitted">Submitted</option>
@@ -2397,12 +2450,12 @@ function CommissionsPage() {
   const [rules, setRules] = useState(() => getRules())
   const [calcMessage, setCalcMessage] = useState('')
   const [draft, setDraft] = useState({
-    agent: 'Marco Rossi',
-    branch: 'Branch Nord',
+    agent: 'Teresa Chiarello',
+    branch: MANAGER_SCOPE_BRANCH,
     deal: '',
-    service: 'Tax',
+    service: 'Luce',
     gross: '',
-    rate: '10',
+    rate: '5',
     status: 'Pending',
     date: new Date().toISOString().slice(0, 10),
   })
@@ -2447,12 +2500,12 @@ function CommissionsPage() {
   function openCreate() {
     setEditingId(null)
     setDraft({
-      agent: 'Marco Rossi',
-      branch: 'Branch Nord',
+      agent: 'Teresa Chiarello',
+      branch: MANAGER_SCOPE_BRANCH,
       deal: '',
-      service: 'Tax',
+      service: 'Luce',
       gross: '',
-      rate: '10',
+      rate: '5',
       status: 'Pending',
       date: new Date().toISOString().slice(0, 10),
     })
@@ -2650,7 +2703,7 @@ function CommissionsPage() {
       <FormModal open={showForm} title={editingId ? 'Edit Commission' : 'Add Commission'} onClose={() => setShowForm(false)}>
         <div className="modal-form">
           <select value={draft.agent} onChange={(e) => setDraft((p) => ({ ...p, agent: e.target.value }))}>
-            {['Marco Rossi', 'Lucia Mancini', 'Paolo Conti'].map((agent) => (
+            {ALL_CONSULENTI.map((agent) => (
               <option key={agent} value={agent}>
                 {agent}
               </option>
@@ -2694,7 +2747,9 @@ function PartnersPage() {
   const [draft, setDraft] = useState({
     name: '',
     city: '',
-    status: 'Active' as 'Active' | 'Pending',
+    partnerType: 'Centro multiservizi',
+    academyStatus: 'In formazione' as 'Attivo' | 'In formazione' | 'Certificato',
+    channelNote: '',
   })
   const { selectedIds, setSelectedIds, toggleOne, toggleAll, isAllSelected } = useBulkSelection(
     partners.map((item) => item.id),
@@ -2709,7 +2764,13 @@ function PartnersPage() {
 
   function openCreate() {
     setEditingId(null)
-    setDraft({ name: '', city: '', status: 'Active' })
+    setDraft({
+      name: '',
+      city: '',
+      partnerType: 'Centro multiservizi',
+      academyStatus: 'In formazione',
+      channelNote: '',
+    })
     setShowModal(true)
   }
 
@@ -2717,16 +2778,29 @@ function PartnersPage() {
     const row = partners.find((item) => item.id === id)
     if (!row) return
     setEditingId(id)
-    setDraft({ name: row.name, city: row.city, status: row.status as 'Active' | 'Pending' })
+    setDraft({
+      name: row.name,
+      city: row.city,
+      partnerType: row.partnerType ?? 'Partner',
+      academyStatus: row.academyStatus,
+      channelNote: row.channelNote ?? '',
+    })
     setShowModal(true)
   }
 
   function savePartner() {
     if (!draft.name.trim() || !draft.city.trim()) return
+    const payload = {
+      name: draft.name.trim(),
+      city: draft.city.trim(),
+      partnerType: draft.partnerType.trim() || 'Partner',
+      academyStatus: draft.academyStatus,
+      channelNote: draft.channelNote.trim() || undefined,
+    }
     if (editingId) {
-      updatePartner(editingId, { name: draft.name.trim(), city: draft.city.trim(), status: draft.status })
+      updatePartner(editingId, payload)
     } else {
-      createPartner({ name: draft.name.trim(), city: draft.city.trim(), status: draft.status })
+      createPartner(payload)
     }
     setPartners(getPartners())
     setShowModal(false)
@@ -2735,8 +2809,8 @@ function PartnersPage() {
 
   return (
     <section>
-      <h1>Partners</h1>
-      <p>Partner agencies and referral channels.</p>
+      <h1>Partner &amp; SOS Academy</h1>
+      <p>SOS Point, centri multiservizio e canali immobiliari / referral.</p>
       {canManage ? (
         <div className="row-actions" style={{ marginTop: 12 }}>
           <button onClick={openCreate}>➕ Add Partner</button>
@@ -2765,7 +2839,9 @@ function PartnersPage() {
               <th>ID</th>
               <th>Partner</th>
               <th>City</th>
-              <th>Status</th>
+              <th>Type</th>
+              <th>Academy</th>
+              <th>Channel</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -2783,7 +2859,9 @@ function PartnersPage() {
                 <td>{partner.id}</td>
                 <td>{partner.name}</td>
                 <td>{partner.city}</td>
-                <td>{partner.status}</td>
+                <td>{partner.partnerType}</td>
+                <td>{partner.academyStatus}</td>
+                <td>{partner.channelNote ?? '—'}</td>
                 <td>
                   {canManage ? (
                     <div className="row-actions">
@@ -2810,10 +2888,26 @@ function PartnersPage() {
         <div className="modal-form">
           <input value={draft.name} placeholder="Partner Name" onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))} />
           <input value={draft.city} placeholder="City" onChange={(e) => setDraft((p) => ({ ...p, city: e.target.value }))} />
-          <select value={draft.status} onChange={(e) => setDraft((p) => ({ ...p, status: e.target.value as 'Active' | 'Pending' }))}>
-            <option value="Active">Active</option>
-            <option value="Pending">Pending</option>
+          <input
+            value={draft.partnerType}
+            placeholder="Tipo (es. ricevitoria, agenzia immobiliare)"
+            onChange={(e) => setDraft((p) => ({ ...p, partnerType: e.target.value }))}
+          />
+          <select
+            value={draft.academyStatus}
+            onChange={(e) =>
+              setDraft((p) => ({ ...p, academyStatus: e.target.value as 'Attivo' | 'In formazione' | 'Certificato' }))
+            }
+          >
+            <option value="In formazione">In formazione</option>
+            <option value="Certificato">Certificato</option>
+            <option value="Attivo">Attivo</option>
           </select>
+          <input
+            value={draft.channelNote}
+            placeholder="Nota canale (opzionale)"
+            onChange={(e) => setDraft((p) => ({ ...p, channelNote: e.target.value }))}
+          />
           <div className="row-actions">
             <button onClick={savePartner}>Save</button>
           </div>
@@ -2823,7 +2917,7 @@ function PartnersPage() {
   )
 }
 
-function SosSyncPage() {
+function ProviderSyncPage() {
   const rows = [
     { id: 'SYNC-2001', time: '14 Apr 10:00', imported: 12, pushed: 3, status: 'Success' },
     { id: 'SYNC-2000', time: '13 Apr 10:00', imported: 9, pushed: 5, status: 'Success' },
@@ -2834,8 +2928,8 @@ function SosSyncPage() {
   )
   return (
     <section>
-      <h1>SOS Sync</h1>
-      <p>Legacy sync monitor for admin operations.</p>
+      <h1>Sync fornitori</h1>
+      <p>Monitoraggio integrazioni con gestori (Enel, Eni, TIM, Vodafone, …) — stato contratti e voltura.</p>
       {selectedIds.length > 0 ? (
         <div className="bulk-bar">
           <span>{selectedIds.length} selected</span>
@@ -2920,7 +3014,7 @@ function ProfilePage() {
   const [form, setForm] = useState(() => ({
     name: user?.name ?? '',
     email: user?.email ?? '',
-    branch: user?.branch ?? 'Branch Nord',
+    branch: user?.branch ?? MANAGER_SCOPE_BRANCH,
   }))
   const [saved, setSaved] = useState(false)
 
@@ -3011,7 +3105,7 @@ function SettingsPage() {
   return (
     <section>
       <h1>Settings</h1>
-      <p>Use reset to restore default demo users and employee data.</p>
+      <p>Reset ripristina utenti demo SOS, filiali, seed pratiche e partner. In produzione: log consenso cliente e tracciamento documentazione fornitori (demo UI only).</p>
       {resetDone ? <p className="calc-banner">Demo data reset complete. Redirecting to login...</p> : null}
       <button onClick={() => setConfirmOpen(true)}>Reset Demo Data</button>
       <ConfirmModal
@@ -3035,7 +3129,7 @@ function AgentsPage() {
   const [draft, setDraft] = useState({
     name: '',
     email: '',
-    branch: role === 'manager' ? user?.branch ?? 'Branch Nord' : 'Branch Nord',
+    branch: role === 'manager' ? user?.branch ?? MANAGER_SCOPE_BRANCH : MANAGER_SCOPE_BRANCH,
     status: 'Active' as 'Active' | 'On Leave' | 'Inactive',
   })
 
@@ -3048,7 +3142,7 @@ function AgentsPage() {
     createAgent({
       name: draft.name.trim(),
       email: draft.email.trim(),
-      branch: role === 'manager' ? user?.branch ?? 'Branch Nord' : draft.branch,
+      branch: role === 'manager' ? user?.branch ?? MANAGER_SCOPE_BRANCH : draft.branch,
       status: draft.status,
     })
     setShowCreate(false)
@@ -3835,7 +3929,8 @@ function App() {
             <Route path="/reports/new" element={<NewReportPage />} />
             <Route path="/commissions" element={<CommissionsPage />} />
             <Route path="/partners" element={<PartnersPage />} />
-            <Route path="/sos-sync" element={<SosSyncPage />} />
+            <Route path="/provider-sync" element={<ProviderSyncPage />} />
+            <Route path="/sos-sync" element={<Navigate to="/provider-sync" replace />} />
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
