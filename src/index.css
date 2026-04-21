@@ -647,6 +647,27 @@ textarea {
   margin-top: 16px;
 }
 
+.login-actions button {
+  min-height: 44px;
+  font-weight: 600;
+  background: linear-gradient(
+    160deg,
+    rgba(99, 102, 241, 0.55) 0%,
+    rgba(14, 165, 233, 0.4) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  box-shadow: 0 4px 14px rgba(2, 6, 23, 0.35);
+}
+
+.login-actions button:hover {
+  background: linear-gradient(
+    160deg,
+    rgba(129, 140, 248, 0.65) 0%,
+    rgba(56, 189, 248, 0.5) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
 .dashboard-header {
   display: flex;
   justify-content: space-between;
@@ -1140,6 +1161,50 @@ td:first-child {
 
   .modal-form {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .login-page {
+    padding: 16px;
+    min-height: 100dvh;
+    align-content: center;
+    box-sizing: border-box;
+  }
+
+  .login-card {
+    padding: 20px 16px;
+  }
+
+  .login-card h1 {
+    font-size: 1.35rem;
+    line-height: 1.25;
+  }
+
+  .login-card p {
+    font-size: 14px;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+  }
+
+  .app-shell {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .sidebar {
+    padding: 16px 12px;
   }
 }
 
