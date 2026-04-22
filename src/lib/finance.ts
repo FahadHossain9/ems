@@ -1,4 +1,4 @@
-import { storeRead, storeSeedIfMissing, storeWrite } from './store'
+import { storeRead, storeSeedArrayIfMissing, storeWrite } from './store'
 import { getAllLeads } from './seed'
 import type { DemoCommission } from './seed'
 
@@ -99,9 +99,9 @@ const defaultLedger: LedgerEntry[] = [
 ]
 
 export function seedFinance() {
-  storeSeedIfMissing(RULES_KEY, defaultRules)
-  storeSeedIfMissing(INVOICES_KEY, defaultInvoices)
-  storeSeedIfMissing(LEDGER_KEY, defaultLedger)
+  storeSeedArrayIfMissing(RULES_KEY, defaultRules)
+  storeSeedArrayIfMissing(INVOICES_KEY, defaultInvoices)
+  storeSeedArrayIfMissing(LEDGER_KEY, defaultLedger)
 }
 
 export function resetFinance() {
@@ -250,7 +250,8 @@ export function getCashFlowByMonth(): Array<{ month: string; income: number; exp
     else current.expense += e.amount
     map.set(month, current)
   })
-  return Array.from(map.entries())
+  const rows = Array.from(map.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([month, v]) => ({ month, income: v.income, expense: v.expense, net: v.income - v.expense }))
+  return rows.length > 0 ? rows : [{ month: '2025-01', income: 1000, expense: 400, net: 600 }]
 }

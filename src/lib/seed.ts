@@ -1,4 +1,5 @@
 import { getSessionUser } from './demoAuth'
+import { storeSeedArrayIfMissing } from './store'
 import { MANAGER_SCOPE_BRANCH } from './sosDemo'
 
 export type LeadStage = 'New' | 'Contacted' | 'Proposal Sent' | 'Negotiation' | 'Won' | 'Lost'
@@ -162,13 +163,6 @@ const defaultActivity: DemoActivity[] = [
   { id: 'a-6', agent: 'Teresa Chiarello', branch: 'Nola', text: 'Autofficina Vesuvio segnata Won', kind: 'stage', createdAt: '2 days ago' },
 ]
 
-function seed<T>(key: string, defaults: T) {
-  if (typeof window === 'undefined') return
-  if (!window.localStorage.getItem(key)) {
-    window.localStorage.setItem(key, JSON.stringify(defaults))
-  }
-}
-
 function read<T>(key: string): T[] {
   if (typeof window === 'undefined') return [] as T[]
   const raw = window.localStorage.getItem(key)
@@ -182,11 +176,11 @@ function read<T>(key: string): T[] {
 }
 
 export function seedAllRoleData() {
-  seed(LEADS_KEY, defaultLeads)
-  seed(REPORTS_KEY, defaultReports)
-  seed(COMMISSIONS_KEY, defaultCommissions)
-  seed(NOTIFICATIONS_KEY, defaultNotifications)
-  seed(ACTIVITY_KEY, defaultActivity)
+  storeSeedArrayIfMissing(LEADS_KEY, defaultLeads)
+  storeSeedArrayIfMissing(REPORTS_KEY, defaultReports)
+  storeSeedArrayIfMissing(COMMISSIONS_KEY, defaultCommissions)
+  storeSeedArrayIfMissing(NOTIFICATIONS_KEY, defaultNotifications)
+  storeSeedArrayIfMissing(ACTIVITY_KEY, defaultActivity)
 }
 
 export function resetAllRoleData() {

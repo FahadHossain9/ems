@@ -1,4 +1,12 @@
+import type { DemoUser } from './demoAuth'
 import { getSessionUser } from './demoAuth'
+import { EMS_DEFAULT_USERS } from './emsDefaultUsers'
+import { resetFinance, seedFinance } from './finance'
+import { seedOrgData } from './orgData'
+import { seedPartnersIfMissing } from './partnersData'
+import { resetReporting } from './reporting'
+import { resetAllRoleData, seedAllRoleData } from './seed'
+import { storeSeedArrayIfMissing } from './store'
 import { MANAGER_SCOPE_BRANCH } from './sosDemo'
 
 export type ClientSegment = 'Famiglia' | 'PMI'
@@ -19,6 +27,9 @@ export type DemoEmployee = {
 }
 
 const EMPLOYEES_KEY = 'ems_employees'
+const USERS_KEY = 'ems_users'
+const PARTNERS_KEY = 'ems_partners'
+const SESSION_KEY = 'ems_session'
 
 const defaultEmployees: DemoEmployee[] = [
   {
@@ -192,10 +203,7 @@ const defaultEmployees: DemoEmployee[] = [
 ]
 
 export function seedEmployeesIfMissing() {
-  if (typeof window === 'undefined') return
-  if (!window.localStorage.getItem(EMPLOYEES_KEY)) {
-    window.localStorage.setItem(EMPLOYEES_KEY, JSON.stringify(defaultEmployees))
-  }
+  storeSeedArrayIfMissing(EMPLOYEES_KEY, defaultEmployees)
 }
 
 export function getEmployees(): DemoEmployee[] {
@@ -252,9 +260,24 @@ export function deleteEmployee(id: string) {
 
 export function resetDemoData() {
   if (typeof window === 'undefined') return
-  window.localStorage.removeItem('ems_users')
-  window.localStorage.removeItem('ems_employees')
-  window.localStorage.removeItem('ems_session')
-  window.localStorage.removeItem('ems_partners')
+  window.localStorage.removeItem(USERS_KEY)
+  window.localStorage.removeItem(EMPLOYEES_KEY)
+  window.localStorage.removeItem(SESSION_KEY)
+  window.localStorage.removeItem(PARTNERS_KEY)
   seedEmployeesIfMissing()
+}
+
+/** Full demo snapshot (matches Settings reset) — call on every sign-in so each session starts with complete data. */
+export function reseedEmsDemoForLogin() {
+  if (typeof window === 'undefined') return
+  resetDemoData()
+  resetAllRoleData()
+  resetFinance()
+  resetReporting()
+  storeSeedArrayIfMissing(USERS_KEY, EMS_DEFAULT_USERS as DemoUser[])
+  seedEmployeesIfMissing()
+  seedAllRoleData()
+  seedOrgData()
+  seedFinance()
+  seedPartnersIfMissing()
 }

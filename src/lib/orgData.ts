@@ -1,4 +1,5 @@
 import { getSessionUser } from './demoAuth'
+import { storeSeedArrayIfMissing } from './store'
 import { AGENTS_SEED, BRANCHES_SEED, MANAGER_SCOPE_BRANCH } from './sosDemo'
 
 export type BranchRecord = {
@@ -24,13 +25,6 @@ const defaultBranches: BranchRecord[] = BRANCHES_SEED.map((b) => ({ ...b }))
 
 const defaultAgents: AgentRecord[] = AGENTS_SEED.map((a) => ({ ...a }))
 
-function seed<T>(key: string, defaults: T) {
-  if (typeof window === 'undefined') return
-  if (!window.localStorage.getItem(key)) {
-    window.localStorage.setItem(key, JSON.stringify(defaults))
-  }
-}
-
 function read<T>(key: string): T[] {
   if (typeof window === 'undefined') return [] as T[]
   const raw = window.localStorage.getItem(key)
@@ -48,8 +42,8 @@ function write<T>(key: string, rows: T[]) {
 }
 
 export function seedOrgData() {
-  seed(BRANCHES_KEY, defaultBranches)
-  seed(AGENTS_KEY, defaultAgents)
+  storeSeedArrayIfMissing(BRANCHES_KEY, defaultBranches)
+  storeSeedArrayIfMissing(AGENTS_KEY, defaultAgents)
 }
 
 export function getBranches(): BranchRecord[] {

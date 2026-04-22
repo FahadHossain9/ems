@@ -2,9 +2,16 @@ import { useEffect, useRef, useState } from 'react'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { BrowserRouter, Link, NavLink, Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { getSessionUser, loginByRole, logout, seedUsersIfMissing, updateSessionProfile } from './lib/demoAuth'
+import { getSessionUser, loginByRole, logout, updateSessionProfile } from './lib/demoAuth'
 import type { Role } from './lib/demoAuth'
-import { createEmployee, deleteEmployee, getEmployeeById, getScopedEmployees, resetDemoData, seedEmployeesIfMissing, updateEmployee } from './lib/demoData'
+import {
+  createEmployee,
+  deleteEmployee,
+  getEmployeeById,
+  getScopedEmployees,
+  reseedEmsDemoForLogin,
+  updateEmployee,
+} from './lib/demoData'
 import {
   createLead,
   createReport,
@@ -15,14 +22,12 @@ import {
   getLeads,
   getNotifications,
   getReports,
-  seedAllRoleData,
-  resetAllRoleData,
   updateLead,
   updateReport,
 } from './lib/seed'
 import type { DemoLead, LeadStage } from './lib/seed'
 import { getMenuForRole } from './lib/menus'
-import { createAgent, createBranch, deleteAgent, getBranches, getScopedAgents, seedOrgData } from './lib/orgData'
+import { createAgent, createBranch, deleteAgent, getBranches, getScopedAgents } from './lib/orgData'
 import {
   addLedgerEntry,
   deleteInvoice,
@@ -32,10 +37,8 @@ import {
   getInvoices,
   getLedger,
   getRules,
-  resetFinance,
   runCommissionCalculation,
   saveRules,
-  seedFinance,
   updateInvoiceStatus,
 } from './lib/finance'
 import type { InvoiceStatus } from './lib/finance'
@@ -45,13 +48,12 @@ import {
   PRESET_LABELS,
   deleteSavedView,
   getSavedViews,
-  resetReporting,
   runReport,
   saveView,
 } from './lib/reporting'
 import type { ReportPresetId, SavedView } from './lib/reporting'
 import { exportCsv, exportJson } from './lib/exporters'
-import { createPartner, deletePartner, getPartners, seedPartnersIfMissing, updatePartner } from './lib/partnersData'
+import { createPartner, deletePartner, getPartners, updatePartner } from './lib/partnersData'
 import {
   AGENTS_BY_BRANCH,
   ALL_CONSULENTI,
@@ -522,12 +524,6 @@ function LoginPage() {
   const { t, i18n } = useTranslation()
 
   useEffect(() => {
-    seedUsersIfMissing()
-    seedEmployeesIfMissing()
-    seedAllRoleData()
-    seedOrgData()
-    seedFinance()
-    seedPartnersIfMissing()
     if (getSessionUser()) {
       navigate('/dashboard', { replace: true })
     }
@@ -588,6 +584,11 @@ function PlaceholderPage({ title }: { title: string }) {
 
 const chartColors = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444']
 
+function pieDataOrPlaceholder(rows: { name: string; value: number }[]) {
+  const sum = rows.reduce((s, r) => s + r.value, 0)
+  return sum === 0 ? [{ name: 'Demo', value: 1 }] : rows
+}
+
 function DashboardHeader({ title, subtitle, actions }: { title: string; subtitle: string; actions?: React.ReactNode }) {
   return (
     <header className="dashboard-header">
@@ -623,15 +624,17 @@ function AdminDashboard() {
   const wonLeads = leads.filter((l) => l.stage === 'Won')
   const revenue = wonLeads.reduce((sum, l) => sum + (l.contractValue ?? 0), 0)
   const conversion = leads.length > 0 ? (wonLeads.length / leads.length) * 100 : 0
-  const outcomeData = [
+  const outcomeData = pieDataOrPlaceholder([
     { name: 'Won', value: leads.filter((l) => l.stage === 'Won').length },
     { name: 'Lost', value: leads.filter((l) => l.stage === 'Lost').length },
     { name: 'Active', value: leads.filter((l) => l.stage !== 'Won' && l.stage !== 'Lost').length },
-  ]
-  const pieData = (['Pending', 'Approved', 'Paid', 'Disputed'] as const).map((name) => ({
-    name,
-    value: commissions.filter((c) => c.status === name).length,
-  }))
+  ])
+  const pieData = pieDataOrPlaceholder(
+    (['Pending', 'Approved', 'Paid', 'Disputed'] as const).map((name) => ({
+      name,
+      value: commissions.filter((c) => c.status === name).length,
+    })),
+  )
   const trendData = [
     { month: 'Jan', value: 38000 }, { month: 'Feb', value: 42000 },
     { month: 'Mar', value: 51000 }, { month: 'Apr', value: 56000 },
@@ -778,12 +781,13 @@ function ManagerDashboard() {
   const staleLeads = leads.filter((l) => l.stageAgeDays >= 14 && l.stage !== 'Won' && l.stage !== 'Lost')
   const wonValue = leads.filter((l) => l.stage === 'Won').reduce((sum, l) => sum + (l.contractValue ?? 0), 0)
 
-  const agentLoad = Array.from(
+  const agentLoadRaw = Array.from(
     leads.reduce((map, lead) => {
       map.set(lead.assignedAgent, (map.get(lead.assignedAgent) ?? 0) + 1)
       return map
     }, new Map<string, number>()),
   ).map(([name, tasks]) => ({ name, tasks }))
+  const agentLoad = agentLoadRaw.length ? agentLoadRaw : [{ name: '—', tasks: 1 }]
 
   const cards = [
     { label: 'Clienti filiale', value: '18', trend: MANAGER_SCOPE_BRANCH },
@@ -3087,16 +3091,7 @@ function SettingsPage() {
   const [resetDone, setResetDone] = useState(false)
 
   function handleReset() {
-    resetDemoData()
-    resetAllRoleData()
-    resetFinance()
-    resetReporting()
-    seedUsersIfMissing()
-    seedEmployeesIfMissing()
-    seedAllRoleData()
-    seedOrgData()
-    seedFinance()
-    seedPartnersIfMissing()
+    reseedEmsDemoForLogin()
     setConfirmOpen(false)
     setResetDone(true)
     setTimeout(() => navigate('/login', { replace: true }), 900)
@@ -3761,6 +3756,7 @@ function ReportingPage() {
     : ['pipeline-performance', 'commission-report', 'cash-flow', 'agent-productivity', 'branch-performance']
 
   const result = runReport(preset, filters)
+  const reportChart = result.chart.length ? result.chart : [{ label: '—', value: 0 }]
 
   function handleSaveView() {
     if (!saveName.trim()) return
@@ -3838,7 +3834,7 @@ function ReportingPage() {
         <h3>{PRESET_LABELS[preset]}</h3>
         <div className="chart-wrap">
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={result.chart}>
+            <BarChart data={reportChart}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.2)" />
               <XAxis dataKey="label" stroke="#cbd5e1" />
               <YAxis stroke="#cbd5e1" />

@@ -1,4 +1,6 @@
-import { MANAGER_SCOPE_BRANCH } from './sosDemo'
+import { reseedEmsDemoForLogin } from './demoData'
+import { EMS_DEFAULT_USERS } from './emsDefaultUsers'
+import { storeSeedArrayIfMissing } from './store'
 
 export type Role = 'admin' | 'manager' | 'employee'
 
@@ -14,38 +16,8 @@ export type DemoUser = {
 const USERS_KEY = 'ems_users'
 const SESSION_KEY = 'ems_session'
 
-const defaultUsers: DemoUser[] = [
-  {
-    id: 'u-admin',
-    name: 'Santo Vanzanella',
-    email: 'presidente@sosutenzeservizi.it',
-    role: 'admin',
-    branch: 'All',
-    initials: 'SV',
-  },
-  {
-    id: 'u-manager',
-    name: 'Elena Esposito',
-    email: 'operations.nola@sosutenzeservizi.it',
-    role: 'manager',
-    branch: MANAGER_SCOPE_BRANCH,
-    initials: 'EE',
-  },
-  {
-    id: 'u-employee',
-    name: 'Teresa Chiarello',
-    email: 'teresa.chiarello@sosutenzeservizi.it',
-    role: 'employee',
-    branch: MANAGER_SCOPE_BRANCH,
-    initials: 'TC',
-  },
-]
-
 export function seedUsersIfMissing() {
-  if (typeof window === 'undefined') return
-  if (!window.localStorage.getItem(USERS_KEY)) {
-    window.localStorage.setItem(USERS_KEY, JSON.stringify(defaultUsers))
-  }
+  storeSeedArrayIfMissing(USERS_KEY, EMS_DEFAULT_USERS as DemoUser[])
 }
 
 export function getUsers(): DemoUser[] {
@@ -73,8 +45,10 @@ export function getSessionUser(): DemoUser | null {
 }
 
 export function loginByRole(role: Role): DemoUser | null {
+  if (typeof window === 'undefined') return null
+  reseedEmsDemoForLogin()
   const user = getUsers().find((item) => item.role === role) ?? null
-  if (!user || typeof window === 'undefined') return null
+  if (!user) return null
   window.localStorage.setItem(SESSION_KEY, JSON.stringify(user))
   return user
 }

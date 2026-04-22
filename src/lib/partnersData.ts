@@ -1,3 +1,5 @@
+import { storeSeedArrayIfMissing } from './store'
+
 export type PartnerAcademyStatus = 'Attivo' | 'In formazione' | 'Certificato'
 
 export type PartnerRecord = {
@@ -81,10 +83,7 @@ function normalizePartner(raw: unknown): PartnerRecord | null {
 }
 
 export function seedPartnersIfMissing() {
-  if (typeof window === 'undefined') return
-  if (!window.localStorage.getItem(PARTNERS_KEY)) {
-    window.localStorage.setItem(PARTNERS_KEY, JSON.stringify(defaultPartners))
-  }
+  storeSeedArrayIfMissing(PARTNERS_KEY, defaultPartners)
 }
 
 export function getPartners(): PartnerRecord[] {

@@ -1,5 +1,6 @@
 import { getSessionUser } from './demoAuth'
-import { getAllLeads } from './seed'
+import { seedFinance } from './finance'
+import { getAllLeads, seedAllRoleData } from './seed'
 import { storeRead, storeSeedIfMissing, storeWrite } from './store'
 import { getBranches } from './orgData'
 import type { DemoCommission } from './seed'
@@ -51,6 +52,8 @@ function scopeAgent(filters: ReportFilters): string | undefined {
 }
 
 export function runReport(preset: ReportPresetId, filters: ReportFilters): ReportResult {
+  seedAllRoleData()
+  seedFinance()
   switch (preset) {
     case 'pipeline-performance':
       return pipelinePerformance(filters)

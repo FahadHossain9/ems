@@ -41,3 +41,21 @@ export function storeSeedIfMissing<T>(key: string, defaults: T) {
     window.localStorage.setItem(key, JSON.stringify(defaults))
   }
 }
+
+/** Reseed when key is missing, invalid JSON, or an empty array (avoids Recharts / empty-state crashes on Vercel). */
+export function storeSeedArrayIfMissing<T>(key: string, defaults: T[]) {
+  if (typeof window === 'undefined') return
+  const raw = window.localStorage.getItem(key)
+  if (!raw) {
+    window.localStorage.setItem(key, JSON.stringify(defaults))
+    return
+  }
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      window.localStorage.setItem(key, JSON.stringify(defaults))
+    }
+  } catch {
+    window.localStorage.setItem(key, JSON.stringify(defaults))
+  }
+}
